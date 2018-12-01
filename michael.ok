@@ -1,0 +1,47 @@
+*** in child
+*** Child is producing the 14th fib number...
+*** 0
+*** 1
+*** 1
+*** 2
+*** 3
+*** 5
+*** 8
+*** 13
+*** 21
+*** 34
+*** 55
+*** 89
+*** 144
+*** 233
+*** 377
+*** Exiting child with 377 as exit code
+*** Leaving parent, recieved 377 as calculation for 14th fib number
+*** in parent
+*** 377 -1
+*** in child2
+*** Child is producing the 13th fib number...
+*** 0
+*** 1
+*** 1
+*** 2
+*** 3
+*** 5
+*** 8
+*** 13
+*** 21
+*** 34
+*** 55
+*** 89
+*** 144
+*** 233
+*** Exiting child with 233 as exit code
+*** Leaving parent, recieved 233 as calculation for 13th fib number
+*** in parent2
+*** Calculated 610 as the 15th fib number
+*** That is correct!
+*** fd = 0
+*** len = 43
+*** this is nice
+*** we can read and write
+*** 2000000000 shutdown

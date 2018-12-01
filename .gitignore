@@ -1,0 +1,14 @@
+/.externalToolBuilders/
+/.settings/
+/.project
+/.cproject
+*.o
+*.d
+.*.swp
+*.result
+*.diff
+*.raw
+*.out
+*.sort
+d.img
+t1.img

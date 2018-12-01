@@ -1,0 +1,37 @@
+- Describe how you keep track of open file offsets
+	- I'm using Openfile structs that hold a Strong pointer to a File class, which is a wrapper 
+	for vNodes/U8250's that provide a uniform interface for writing to and from files or stdin/out/
+	err, and also the current offset to this file. These Openfile structs belong to each PCB and 
+	are deep copied when fork is called. When a user programs calls read/write on a file the 
+	system will reference the active PCB's Openfile struct that corresponds to the provided file 
+	descriptor to determine the offset.
+
+- Explain why it's a good idea to copy the exec args in kernel space
+  before performing the exec
+  - We need to copy the exec args into kernel space before performing exec because one of the 
+  first steps in exec is to drop all previous memory mappings. If we left these arguments in the 
+  user space before performing exec, then when we destroy the old thread's memory mappings the old 
+  pointers to the user stack would be useless and it would be impossible to find them.
+
+- List 3 security exposures that your implementation of exec addressed
+	
+	- 1. By copying user data onto the kernel stack first, we also remove the risk of using 
+	corrupted data from user memory during exec
+	
+	- 2. By deleting user mappings we ensure that the executed program is not able to view any of 
+	the user's previous data
+	
+	- 3. By performing the exec in the kernel we can ensure that user programs are not able to 
+	modify the stack on their own
+
+
+- What does mkfs/main.cc do?
+
+	- It first creates an img file for you named <csid>.img, then it mounts an instance of BobFS 
+	set to read and write from this .img file. It then looks at the 'root' directory located at 
+	mkfs/root and loops through all directory entries and writes a copy of the entire root 
+	directory into this new instance of bobfs.
+
+- Explain the role of opendir and readdir in mkfs/main.cc
+	- opendir and readdir provides us with a C interface to read the contents of directories in 
+	order to traverse the directory tree and build a useable copy of BobFS for us.

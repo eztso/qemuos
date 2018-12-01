@@ -1,0 +1,70 @@
+Due date: 11/27/2018 @ 11:59pm
+
+Assignment:
+~~~~~~~~~~~
+
+- More system calls
+- Donate a test case (<csid>.ok, <csid>.img)
+
+Virtual Address Space:
+~~~~~~~~~~~~~~~~~~~~~~
+
+0x00000000 - 0x7FFFFFFF     (shared kernel RWX)
+0x80000000 - 0xEFFFFFFF     (per-thread user RWX)
+0xF0000000 - 0xFFFFFFFF     (shared kernel RWX)
+
+User code should not be able to access anything outside the user range
+
+System calls:
+~~~~~~~~~~~~~
+
+Look in user/sys.h for information about system calls
+
+Files:
+~~~~~~
+
+- kernel/          contains the kernel files. Do what you want with it.
+
+- user/            contains the user mode programs
+
+    2 user programs are given (init and shell)
+    You can add other user programs by modeling them after init.c
+    make sure you edit the Makefile if you add new user programs
+
+- t0.img           BobFS image containing /sbin/init
+
+To build your own test:
+~~~~~~~~~~~~~~~~~~~~~~~
+
+   cd user
+   <edit files, add files, etc>
+   make
+
+To compile:
+~~~~~~~~~~~
+
+    make
+
+To build your test image
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+    (cd user ; make)
+
+  This will build a file <your csid>.img
+
+To run test:
+~~~~~~~~~~~~
+
+    make -s clean test
+
+To run one test:
+~~~~~~~~~~~~~~~~
+
+    make -s t0.result
+
+To make the output more noisy:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    make clean test
+
+
