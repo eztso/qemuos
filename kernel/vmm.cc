@@ -155,7 +155,7 @@ InterruptSafeLock pfLock;
 extern "C" void vmm_pageFault(uintptr_t va, uintptr_t *saveState) {
     //Debug::printf("| page fault @ %x\n",va);
 	InterruptSafeLocker pfLocker(pfLock);
-    active()->addressSpace->handlePageFault(va);
+    active()->threadPCB->addressSpace->handlePageFault(va);
 }
 
 bool AddressSpace::compareAddressSpace(AddressSpace* child, AddressSpace* parent) {

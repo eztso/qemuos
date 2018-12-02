@@ -5,7 +5,7 @@
 #include "vmm.h"
 #include "tss.h"
 
-Thread::Thread() : addressSpace(new AddressSpace(false)) {
+Thread::Thread() {
 }
 
 class InitialThread : public Thread {
@@ -114,7 +114,7 @@ again:
     }
  
     tss[SMP::me()].esp0 = next->interruptEsp();
-    next->addressSpace->activate();
+    next->threadPCB->addressSpace->activate();
     contextSwitch(&me->ebx,&next->ebx);
 }
 
