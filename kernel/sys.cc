@@ -93,7 +93,7 @@ public:
 		thread([p_thread, userPC, userESP, childPID, &sync](){
 
 			/*** Set mappings ***/
-			uint32_t *pd = p_thread->addressSpace->getPD();
+			uint32_t *pd = p_thread->threadPCB->addressSpace->getPD();
 			uint32_t P = 1;
 		    for (uint32_t i0 = 512; i0 < 960; i0++) {
 		        uint32_t pde = pd[i0];
@@ -266,9 +266,9 @@ public:
 		if(ELF::load(file) == 0) { return -1; }
 
 		/*** Delete previous mappings ***/
-		AddressSpace* tmp = active()->addressSpace;
-	    active()->addressSpace = new AddressSpace(false);
-	    active()->addressSpace->activate();
+		AddressSpace* tmp = active()->threadPCB->addressSpace;
+	    active()->threadPCB->addressSpace = new AddressSpace(false);
+	    active()->threadPCB->addressSpace->activate();
 	    delete tmp;
 
 	    /*** PROTECT KERNEL? ***/

@@ -81,6 +81,7 @@ public:
     StrongPtr<Semaphore> semaphores[max_num];
     StrongPtr<PCB> parent;
     uint32_t pid;
+    AddressSpace *addressSpace;
 
     static bool isFile(uint32_t num)
     {
@@ -100,7 +101,9 @@ public:
         fdArray[0] = StrongPtr<OpenFile> {new OpenFile(u8250, 0)};
         fdArray[1] = StrongPtr<OpenFile> {new OpenFile(u8250, 0)};
         fdArray[2] = StrongPtr<OpenFile> {new OpenFile(u8250, 0)};
+        addressSpace = new AddressSpace(false);
     }
+
 };
 
 
@@ -113,7 +116,6 @@ public:
     uint32_t esi;
     uint32_t edi;
     uint32_t leaveMeAlone = 0;
-    AddressSpace *addressSpace;
     StrongPtr<PCB> threadPCB { new PCB() };
     virtual void start() = 0;
     virtual uint32_t interruptEsp() = 0;
