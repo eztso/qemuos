@@ -13,7 +13,7 @@
 #include "fsfile.h"
 
 extern g_FS* sysFS;
-extern VMMInfo *info;
+extern VMMInfo *vmm_info;
 PIDManager* g_pid = nullptr;
 
 bool isOpenFile(uint32_t fd)

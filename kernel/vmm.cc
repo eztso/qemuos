@@ -8,20 +8,20 @@
 #include "atomic.h"
 #include "debug.h"
 
-VMMInfo *info = nullptr;
+VMMInfo *vmm_info = nullptr;
 
 void VMM::init(uint32_t start, uint32_t size) {
     Debug::printf("| physical range 0x%x 0x%x\n",start,start+size);
-    info = new VMMInfo;
-    info->avail = start;
-    info->limit = start + size;
-    info->firstFree = nullptr;
+    vmm_info = new VMMInfo;
+    vmm_info->avail = start;
+    vmm_info->limit = start + size;
+    vmm_info->firstFree = nullptr;
 
     // TODO: add needed locks
     // MISSING();
 
     // must be last
-    info->sharedAddressSpace = new AddressSpace(true);
+    vmm_info->sharedAddressSpace = new AddressSpace(true);
 
     /* register the page fault handler */
     IDT::trap(14,(uint32_t)pageFaultHandler_,3);
@@ -29,18 +29,18 @@ void VMM::init(uint32_t start, uint32_t size) {
 
 
 uint32_t VMM::alloc() {
-	InterruptSafeLocker vmmLocker(info->vmmLock);
+	InterruptSafeLocker vmmLocker(vmm_info->vmmLock);
     uint32_t p;
 
-    if (info->firstFree != nullptr) {
-        p = (uint32_t) info->firstFree;
-        info->firstFree = info->firstFree->next;
+    if (vmm_info->firstFree != nullptr) {
+        p = (uint32_t) vmm_info->firstFree;
+        vmm_info->firstFree = vmm_info->firstFree->next;
     } else {
-        if (info->avail == info->limit) {
+        if (vmm_info->avail == vmm_info->limit) {
             Debug::panic("no more frames");
         }
-        p = info->avail;
-        info->avail += FRAME_SIZE;
+        p = vmm_info->avail;
+        vmm_info->avail += FRAME_SIZE;
     }
 
     bzero((void*)p,FRAME_SIZE);
@@ -50,10 +50,10 @@ uint32_t VMM::alloc() {
 }
 
 void VMM::free(uint32_t p) {
-	InterruptSafeLocker vmmLocker(info->vmmLock);
+	InterruptSafeLocker vmmLocker(vmm_info->vmmLock);
     VMMNode* n = (VMMNode*) p;    
-    n->next = info->firstFree;
-    info->firstFree = n;
+    n->next = vmm_info->firstFree;
+    vmm_info->firstFree = n;
 
 }
 
@@ -69,7 +69,7 @@ AddressSpace::AddressSpace(bool isShared) : lock() {
     pd = (uint32_t*) VMM::alloc();
     if (isShared) {
         for (uint32_t va = VMM::FRAME_SIZE;
-            va < info->limit;
+            va < vmm_info->limit;
             va += VMM::FRAME_SIZE
         ) {
             pmap(va,va,false,true);
@@ -90,14 +90,14 @@ AddressSpace::AddressSpace(bool isShared) : lock() {
         }
     } else {
         for (int i=0; i<1024; i++) {
-            pd[i] = info->sharedAddressSpace->pd[i];
+            pd[i] = vmm_info->sharedAddressSpace->pd[i];
         }
     }
 }
 
 AddressSpace::~AddressSpace() {
     // for (int i0 = 0; i0 < 1024; i0++) {
-    //     if (info->sharedAddressSpace->pd[i0] != 0) continue;
+    //     if (vmm_info->sharedAddressSpace->pd[i0] != 0) continue;
 
     //     uint32_t pde = pd[i0];
     //     if (pde & P) {
