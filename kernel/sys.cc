@@ -268,10 +268,10 @@ public:
 		// if(ELF::load(file) == 0) { return -1; }
 
 		/*** Delete previous mappings ***/
-		// AddressSpace* tmp = active()->threadPCB->addressSpace;
+		AddressSpace* tmp = active()->threadPCB->addressSpace;
 	    active()->threadPCB->addressSpace = new AddressSpace(false);
 	    active()->threadPCB->addressSpace->activate();
-	    // delete tmp;
+	    delete tmp;
 
 	    /*** PROTECT KERNEL? ***/
 	    /*** load the executable ***/

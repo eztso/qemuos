@@ -4,7 +4,8 @@
 #include "stdint.h"
 #include "atomic.h"
 #include "mutex.h"
-
+#include "vector.h"
+#include "debug.h"
 
 // The virtual memory interface
 namespace VMM {
@@ -71,6 +72,7 @@ struct VMMInfo {
     uint32_t limit;
     AddressSpace* sharedAddressSpace;
     InterruptSafeLock vmmLock;
+    static const uint32_t numFrames = 32224;
 };
 
 #endif
