@@ -96,23 +96,23 @@ AddressSpace::AddressSpace(bool isShared) : lock() {
 }
 
 AddressSpace::~AddressSpace() {
-    for (int i0 = 0; i0 < 1024; i0++) {
-        if (info->sharedAddressSpace->pd[i0] != 0) continue;
+    // for (int i0 = 0; i0 < 1024; i0++) {
+    //     if (info->sharedAddressSpace->pd[i0] != 0) continue;
 
-        uint32_t pde = pd[i0];
-        if (pde & P) {
-            uint32_t *pt = (uint32_t*) (pde & 0xfffff000);
-            for (uint32_t i1 = 0; i1 < 1024; i1++) {
-                uint32_t pte = pt[i1];
-                if (pte & P) {
-                    uint32_t pa = pte & 0xfffff000;
-                    VMM::free(pa);
-                }
-            }
-            VMM::free((uint32_t) pt);
-        }
-    }
-    VMM::free((uint32_t) pd);
+    //     uint32_t pde = pd[i0];
+    //     if (pde & P) {
+    //         uint32_t *pt = (uint32_t*) (pde & 0xfffff000);
+    //         for (uint32_t i1 = 0; i1 < 1024; i1++) {
+    //             uint32_t pte = pt[i1];
+    //             if (pte & P) {
+    //                 uint32_t pa = pte & 0xfffff000;
+    //                 VMM::free(pa);
+    //             }
+    //         }
+    //         VMM::free((uint32_t) pt);
+    //     }
+    // }
+    // VMM::free((uint32_t) pd);
 }
 
 /* precondition: table is locked */
@@ -131,8 +131,6 @@ void AddressSpace::pmap(uint32_t va, uint32_t pa, bool forUser, bool forWrite) {
 
     if ((pte & 1) == 0) 
         pte = (pa & 0xfffff000) | (forUser ? U : 0) | (forWrite ? W : 0) | 1;
-
-
 }
 
 void AddressSpace::handlePageFault(uint32_t va_) {
@@ -142,10 +140,19 @@ void AddressSpace::handlePageFault(uint32_t va_) {
 
     bool forUser = (va >= 0x80000000) && (va < 0xF0000000);
 
-    if ((getPTE(va) & 1)  == 0) {
+    if ((getPTE(va) & P)  == 0) {
         uint32_t pa = VMM::alloc();
         pmap(va,pa,forUser,true);
     }
+    else if((getPTE(va) & W) == 0)
+    {
+        uint32_t pa = VMM::alloc();
+        uint32_t& pte = getPTE(va);
+        memcpy((void*)pa, (void*)va, VMM::FRAME_SIZE);
+        pte = 0;
+        pmap(va, pa, forUser, true);
+    }
+    else Debug::panic("*** BAD\n");
 
     lock.unlock();
 
@@ -178,6 +185,8 @@ bool AddressSpace::compareAddressSpace(AddressSpace* child, AddressSpace* parent
                     }
                 } else if ((childPDE[j] % 2 == 1) != (parentPDE[j] % 2 == 1))
                     Debug::panic("valid bits don't match at PT level \n");
+                else if ((((childPDE[j] & W) != 0) || ((parentPDE[j] & W) != 0)))
+                    Debug::panic("Readonly bits don't match at PT level \n");
             }
         } else if((child->pd[i] % 2 == 1) != (parent->pd[i] % 2 == 1))
             Debug::panic("valid bits don't match at PD level \n");

@@ -28,7 +28,8 @@ public:
     }
 
     StrongPtr(const StrongPtr& src) : ptr(src.ptr), ref(src.ref){
-        ref->inc();
+        if(ref)
+            ref->inc();
     }
 
     StrongPtr(StrongPtr&& src) : ptr(src.ptr), ref(src.ref){
@@ -94,7 +95,8 @@ public:
         }
         ptr = src.ptr;
         ref = src.ref;
-        ref->inc();
+        if(ref)
+            ref->inc();
         return *this;
     }
 

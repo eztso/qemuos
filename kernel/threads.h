@@ -19,8 +19,9 @@ class PIDManager
 {
 private:
     Atomic<uint32_t> pid_c = 2000;
-    Hashmap<int32_t, StrongPtr<Future<int32_t>>> pid_map;
 public:
+    Hashmap<int32_t, StrongPtr<Future<int32_t>>> pid_map;
+
     int32_t nextPID()
     {
         // allocate PIDs using an incremented counter

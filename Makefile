@@ -23,7 +23,7 @@ the_kernel :
 	cp $*.src $*.img
 
 $(RAWS) : %.raw : .FORCE the_kernel t0.img
-	timeout 20 qemu-system-i386 -nographic -smp 4 --monitor none --serial file:$*.raw -drive file=kernel/kernel.img,index=0,media=disk,format=raw -drive file=$*.img,index=3,media=disk,format=raw -device isa-debug-exit,iobase=0xf4,iosize=0x04 2> /dev/null || true
+	timeout 20 qemu-system-i386 -nographic -smp 1 --monitor none --serial file:$*.raw -drive file=kernel/kernel.img,index=0,media=disk,format=raw -drive file=$*.img,index=3,media=disk,format=raw -device isa-debug-exit,iobase=0xf4,iosize=0x04 2> /dev/null || true
 
 .FORCE:
 	

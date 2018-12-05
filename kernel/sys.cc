@@ -44,7 +44,6 @@ public:
 		int32_t curPid = activePCB->pid;
 
 		g_pid->exitPID(curPid, rc);
-
 		stop();
 	}
 	
@@ -104,12 +103,16 @@ public:
 		                if (pte & P) {
 		                    uint32_t pa = pte & 0xfffff000;
 		                    uint32_t va = (i0 << 22) | (i1 << 12);
-		                    memcpy((void*)va, (void*)pa, 4096);
+		                    // memcpy((void*)va, (void*)pa, 4096);
+		                    pt[i1] &= ~(0x2);
+		                    active()->threadPCB->addressSpace->pmap(va, pa, true, false);
 		                }
 		            }
 		        }
 		    }
 
+		    AddressSpace::compareAddressSpace(p_thread->threadPCB->addressSpace, active()->threadPCB->addressSpace);
+		    
 		    /*** Copy over values for childPCB and set PID ***/
 		    StrongPtr<PCB> childPCB = active()->threadPCB;
 		    childPCB->pid = childPID;
@@ -237,7 +240,6 @@ public:
 
 		/*** Child doesn't exist ***/
 		if(g_pid->waitPID(childPID, buf) == -1) { return -1; }
-
 		return *buf;
 	}
 
@@ -246,7 +248,7 @@ public:
 	{
 		/*** Arguments ***/
 		char* filePath = (char*) userStack[1];
-
+		
 		/*** Find executable ***/
 		StrongPtr<Node> file = BobFS::find(sysFS->fs, filePath);
 
@@ -263,13 +265,13 @@ public:
 		uint32_t newESP = (uint32_t)userStack;
         
         /*** Protect the kernel ***/
-		if(ELF::load(file) == 0) { return -1; }
+		// if(ELF::load(file) == 0) { return -1; }
 
 		/*** Delete previous mappings ***/
-		AddressSpace* tmp = active()->threadPCB->addressSpace;
+		// AddressSpace* tmp = active()->threadPCB->addressSpace;
 	    active()->threadPCB->addressSpace = new AddressSpace(false);
 	    active()->threadPCB->addressSpace->activate();
-	    delete tmp;
+	    // delete tmp;
 
 	    /*** PROTECT KERNEL? ***/
 	    /*** load the executable ***/
@@ -312,7 +314,6 @@ public:
 	{
 		/*** Arguments ***/
 		char* filePath = (char*)userStack[1];
-
 		/*** Look for the file ***/
 		StrongPtr<Node> vNode = BobFS::find(sysFS->fs, filePath);
 
