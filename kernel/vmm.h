@@ -72,7 +72,7 @@ struct VMMInfo {
     uint32_t limit;
     AddressSpace* sharedAddressSpace;
     InterruptSafeLock vmmLock;
-    static const uint32_t numFrames = 32224;
+    static constexpr uint32_t numFrames = 32736;
 };
 
 #endif
