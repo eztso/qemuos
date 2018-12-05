@@ -36,5 +36,5 @@ extern "C" void ltr(uint32_t);
 
 extern uint32_t tssDescriptorBase;
 extern uint32_t kernelSS;
-
+extern "C" void setCR0(uint32_t);
 #endif

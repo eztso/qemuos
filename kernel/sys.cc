@@ -247,6 +247,7 @@ public:
 	/* execl */
 	int32_t execl()
 	{
+		setCR0(true);
 		/*** Arguments ***/
 		char* filePath = (char*) userStack[1];
 		
@@ -264,9 +265,9 @@ public:
 
 		/*** Start setting up our stack***/
 		uint32_t newESP = (uint32_t)userStack;
-        
+
         /*** Protect the kernel ***/
-		// if(ELF::load(file) == 0) { return -1; }
+		if(ELF::load(file) == 0) { return -1; }
 
 		/*** Delete previous mappings ***/
 		AddressSpace* tmp = active()->threadPCB->addressSpace;
@@ -304,7 +305,8 @@ public:
 
 		newESP = newESP - 4;
 		*((uint32_t*)newESP) = argc;
-  		
+		setCR0(false);
+
 		// start the executable
     	switchToUser(e,newESP,0);
 		return 0;

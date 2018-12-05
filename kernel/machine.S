@@ -187,3 +187,19 @@ sysHandler_:
 	add $8,%esp
 	iret
 
+    .global setCR0
+setCR0:
+    mov 4(%esp),%ebx #arg
+    andl %ebx, %ebx
+    je l1
+    mov %cr0,%eax
+    or $0x10000,%eax
+    mov %eax,%cr0
+    jmp end
+l1:
+    mov %cr0,%eax
+    and $0xfffeffff,%eax
+    mov %eax,%cr0
+end:
+    ret
+
