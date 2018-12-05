@@ -106,12 +106,13 @@ public:
 		                    // memcpy((void*)va, (void*)pa, 4096);
 		                    pt[i1] &= ~(0x2);
 		                    active()->threadPCB->addressSpace->pmap(va, pa, true, false);
+		                    vmm_info->inc(pa);
 		                }
 		            }
 		        }
 		    }
 
-		    AddressSpace::compareAddressSpace(p_thread->threadPCB->addressSpace, active()->threadPCB->addressSpace);
+		    // AddressSpace::compareAddressSpace(p_thread->threadPCB->addressSpace, active()->threadPCB->addressSpace);
 		    
 		    /*** Copy over values for childPCB and set PID ***/
 		    StrongPtr<PCB> childPCB = active()->threadPCB;

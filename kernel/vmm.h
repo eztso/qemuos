@@ -73,6 +73,23 @@ struct VMMInfo {
     AddressSpace* sharedAddressSpace;
     InterruptSafeLock vmmLock;
     static constexpr uint32_t numFrames = 32736;
+    uint32_t refs[numFrames];
+
+    void inc(uint32_t frameAddr)
+    {
+        ++refs[frameAddr >> 12];
+    }
+    uint32_t dec(uint32_t frameAddr)
+    {
+        uint32_t idx = frameAddr >> 12;
+        if(refs[idx] == 0) Debug::panic("*** decrementing already 0\n");
+        --refs[idx];
+        return refs[idx];
+    }
+    uint32_t getRefs(uint32_t frameAddr)
+    {
+        return refs[frameAddr >> 12];
+    }
 };
 
 #endif

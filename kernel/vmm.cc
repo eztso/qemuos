@@ -42,7 +42,8 @@ uint32_t VMM::alloc() {
         p = vmm_info->avail;
         vmm_info->avail += FRAME_SIZE;
     }
-
+    if(vmm_info->getRefs(p) != 0) Debug::panic("*** Allocated block has non zero refs\n");
+    vmm_info->inc(p);
     bzero((void*)p,FRAME_SIZE);
 
 
@@ -50,11 +51,13 @@ uint32_t VMM::alloc() {
 }
 
 void VMM::free(uint32_t p) {
-	InterruptSafeLocker vmmLocker(vmm_info->vmmLock);
-    VMMNode* n = (VMMNode*) p;    
-    n->next = vmm_info->firstFree;
-    vmm_info->firstFree = n;
-
+	if(vmm_info->dec(p) == 0)
+	{
+		InterruptSafeLocker vmmLocker(vmm_info->vmmLock);
+	    VMMNode* n = (VMMNode*) p;    
+	    n->next = vmm_info->firstFree;
+	    vmm_info->firstFree = n;
+	}
 }
 
 /****************/
@@ -96,23 +99,23 @@ AddressSpace::AddressSpace(bool isShared) : lock() {
 }
 
 AddressSpace::~AddressSpace() {
-    // for (int i0 = 0; i0 < 1024; i0++) {
-    //     if (vmm_info->sharedAddressSpace->pd[i0] != 0) continue;
+    for (int i0 = 0; i0 < 1024; i0++) {
+        if (vmm_info->sharedAddressSpace->pd[i0] != 0) continue;
 
-    //     uint32_t pde = pd[i0];
-    //     if (pde & P) {
-    //         uint32_t *pt = (uint32_t*) (pde & 0xfffff000);
-    //         for (uint32_t i1 = 0; i1 < 1024; i1++) {
-    //             uint32_t pte = pt[i1];
-    //             if (pte & P) {
-    //                 uint32_t pa = pte & 0xfffff000;
-    //                 VMM::free(pa);
-    //             }
-    //         }
-    //         VMM::free((uint32_t) pt);
-    //     }
-    // }
-    // VMM::free((uint32_t) pd);
+        uint32_t pde = pd[i0];
+        if (pde & P) {
+            uint32_t *pt = (uint32_t*) (pde & 0xfffff000);
+            for (uint32_t i1 = 0; i1 < 1024; i1++) {
+                uint32_t pte = pt[i1];
+                if (pte & P) {
+                    uint32_t pa = pte & 0xfffff000;
+                    VMM::free(pa);
+                }
+            }
+            VMM::free((uint32_t) pt);
+        }
+    }
+    VMM::free((uint32_t) pd);
 }
 
 /* precondition: table is locked */
@@ -146,11 +149,19 @@ void AddressSpace::handlePageFault(uint32_t va_) {
     }
     else if((getPTE(va) & W) == 0)
     {
-        uint32_t pa = VMM::alloc();
-        uint32_t& pte = getPTE(va);
-        memcpy((void*)pa, (void*)va, VMM::FRAME_SIZE);
-        pte = 0;
-        pmap(va, pa, forUser, true);
+    	if(vmm_info->getRefs(getPTE(va) & 0xfffff000) == 1)
+    	{
+    		getPTE(va) |= W;
+    	}
+    	else
+    	{
+	        uint32_t pa = VMM::alloc();
+	        uint32_t& pte = getPTE(va);
+	        memcpy((void*)pa, (void*)va, VMM::FRAME_SIZE);
+	        VMM::free(pte & 0xfffff000);
+	        pte = 0;
+	        pmap(va, pa, forUser, true);	
+    	}
     }
     else Debug::panic("*** BAD\n");
 
