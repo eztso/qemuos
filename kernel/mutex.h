@@ -10,4 +10,12 @@ public:
     void unlock(void) { up(); }
 };
 
+class MutexLocker {
+    Mutex& theLock;
+public:
+    MutexLocker(Mutex& it) : theLock(it) {
+    	it.lock();
+    }
+    ~MutexLocker() { theLock.unlock(); }
+};
 #endif

@@ -63,15 +63,53 @@ class OpenFile
 public:
     StrongPtr<File> file;
     uint32_t offset;
+    Mutex lock;
     OpenFile(StrongPtr<File> file, uint32_t offset) : file(file), offset(offset) {}
-    ~OpenFile()
+    int32_t writeAll(off_t offset,void* buf,uint32_t n)
     {
+        MutexLocker locker(lock);
+       int32_t bytesRead= this->file->writeAll(offset, buf, n);
+        this->offset+=bytesRead;
+        return bytesRead;
+    }
+
+    int32_t readAll(off_t offset,void* buf,uint32_t n)
+    {
+        MutexLocker locker(lock);
+        int32_t bytesRead= this->file->readAll(offset, buf, n);
+        this->offset+=bytesRead;
+        return bytesRead;
+    }
+
+    int32_t getSize()
+    {
+        MutexLocker locker(lock);
+        return this->file->size();
+    }
+    int32_t doSeek(off_t offset)
+    {
+        MutexLocker locker(lock);
+        this->offset = offset;
+        return this->offset;
+    }
+    int32_t increaseOff(off_t bytes) {
+        MutexLocker locker(lock);
+        this->offset+=bytes;
+        return this->offset;
+
+    }
+    
+    ~OpenFile() {
+        MutexLocker locker(lock);
         file.reset();
     }
 };
 
 class PCB 
 {
+private:
+    Mutex semLock;
+    Mutex fileLock;
 public:
     static const uint32_t max_num = 1000;
     static const uint32_t fd_off = 0;
@@ -83,6 +121,11 @@ public:
     StrongPtr<PCB> parent;
     uint32_t pid;
     AddressSpace *addressSpace;
+    bool isOpenFile(uint32_t fd)
+{
+    //StrongPtr<PCB> activePCB = this;
+    return PCB::isFile(fd) && !(this->fdArray[fd].isNull()) ;
+}
 
     static bool isFile(uint32_t num)
     {
@@ -96,6 +139,37 @@ public:
     {
         return num >= PCB::child_off;  
     }
+    
+        int32_t allocateSemaphore(int32_t count) {
+        MutexLocker lock(semLock);
+        for(uint32_t i=0;i<max_num;i++) {
+
+             if(semaphores[i].isNull()) {
+                semaphores[i] = StrongPtr<Semaphore> { new Semaphore(count)};
+                return i + sem_off;
+            }
+
+        }
+
+        return -1;
+
+    }
+
+    int32_t allocateFD(StrongPtr<File> file) {
+        MutexLocker lock(fileLock);
+        for(uint32_t i=0;i<max_num;i++) {
+
+             if(fdArray[i].isNull()) {
+                fdArray[i] = StrongPtr<OpenFile> { new OpenFile(file, 0)};
+                return i;
+            }
+
+        }
+
+        return -1;
+
+    }
+
     PCB()
     {
         StrongPtr<File> u8250 { new U8250File(new U8250()) };

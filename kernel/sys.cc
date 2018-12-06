@@ -51,7 +51,6 @@ public:
 	/* writes up to 'nbytes' to file, returns number of files written */
 	ssize_t write()
 	{
-		/*** Arguments ***/
 		uint32_t fd = userStack[1];
 		char* buf = (char*)userStack[2];
 		uint32_t nbytes = userStack[3];
@@ -65,15 +64,16 @@ public:
 		/*** Get and write to file ***/
 		StrongPtr<File> file = activePCB->fdArray[fd]->file;
 		uint32_t offset = activePCB->fdArray[fd]->offset;
-		nbytes = file->writeAll(offset, buf, nbytes);
+		nbytes = activePCB->fdArray[fd]->writeAll(offset, buf, nbytes);
 
 		/*** Increment if file ***/
 		if(!file->std())
 		{
-			activePCB->fdArray[fd]->offset += nbytes;
+			activePCB->fdArray[fd]->increaseOff(nbytes);
 		}
 
 		return nbytes;
+
 	}
 
 	/* fork */
@@ -104,9 +104,32 @@ public:
 		                    uint32_t pa = pte & 0xfffff000;
 		                    uint32_t va = (i0 << 22) | (i1 << 12);
 		                    // memcpy((void*)va, (void*)pa, 4096);
+		                    invlpg(va);
+
+
+
+
+
+
+
 		                    pt[i1] &= ~(0x2);
+
+
+
+
+
+
+
+
+		                   	invlpg(va);
+		                	vmm_info->inc(pa);
+
+
 		                    active()->threadPCB->addressSpace->pmap(va, pa, true, false);
-		                    vmm_info->inc(pa);
+
+
+
+
 		                }
 		            }
 		        }
@@ -142,15 +165,7 @@ public:
 		/*** Arguments ***/
 		uint32_t initialVal = userStack[1];
 
-		for(uint32_t semId = 0; semId < PCB::max_num; semId++)
-		{
-			if(activePCB->semaphores[semId].isNull())
-			{
-				activePCB->semaphores[semId] = StrongPtr<Semaphore>{new Semaphore(initialVal)};
-				return semId + PCB::sem_off;
-			}
-		}
-		return -1;
+		return active()->threadPCB->allocateSemaphore(initialVal);
 	}
 
 	/* semaphore up */
@@ -312,11 +327,11 @@ public:
 		return 0;
 	}
 
-	/* opens a file, returns file descriptor */
 	int32_t open()
 	{
 		/*** Arguments ***/
 		char* filePath = (char*)userStack[1];
+
 		/*** Look for the file ***/
 		StrongPtr<Node> vNode = BobFS::find(sysFS->fs, filePath);
 
@@ -326,10 +341,11 @@ public:
 		/*** Do a cache lookup ***/
 		uint32_t inum = vNode->getInum();
 		StrongPtr<File> file;
-		if(sysFS->openFiles.find(inum))
+		if(sysFS->openFiles.find(inum)) 
 		{
 			file = sysFS->openFiles[inum];
 		}
+
 		else
 		{
 			file = StrongPtr<File>{ new FsFile(vNode) };
@@ -337,15 +353,7 @@ public:
 		}
 
 		/*** Find first available fd and add entry ***/
-		for(uint32_t fd = 0; fd < PCB::sem_off; fd++)
-		{
-			if(activePCB->fdArray[fd].isNull())
-			{
-				activePCB->fdArray[fd] = StrongPtr<OpenFile>{new OpenFile(file, 0)};
-				return fd;
-			}
-		}
-		return -1;
+		return active()->threadPCB->allocateFD(file);
 	}
 
 	/* returns number of bytes in file */
@@ -357,7 +365,7 @@ public:
 		/*** Error ***/
 		if(!isOpenFile(fd)) { return -1; }
 
-		return activePCB->fdArray[fd]->file->size();
+		return activePCB->fdArray[fd]->getSize();
 	}
 
 	/* reads up to nbytes from file, returns number of bytes read */
@@ -377,13 +385,9 @@ public:
 		/*** Get file and read ***/
 		StrongPtr<File> file = activePCB->fdArray[fd]->file;
 		uint32_t offset = activePCB->fdArray[fd]->offset;
-		uint32_t bytesRead = file->readAll(offset, buf, nbytes);
+		uint32_t bytesRead = activePCB->fdArray[fd]->readAll(offset, buf, nbytes);
 
 		/*** Increment if file ***/
-		if(!file->std())
-		{
-			activePCB->fdArray[fd]->offset += bytesRead;
-		}
 
 		return bytesRead;
 	}
@@ -398,9 +402,10 @@ public:
 		/*** Error ***/
 		if(!isOpenFile(fd)) { return -1; }
 
-		activePCB->fdArray[fd]->offset = offset;
-		return offset;
+		return activePCB->fdArray[fd]->doSeek(offset);
 	}
+
+
 };
 
 

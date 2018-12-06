@@ -25,12 +25,12 @@ public:
     void set(T inc) {
         return __atomic_store_n(ptr,inc,__ATOMIC_SEQ_CST);
     }
-    T get(void) const{
+    T get (void) const {
         return __atomic_load_n(ptr,__ATOMIC_SEQ_CST);
     }
     T exchange(T v) {
         T ret;
-        __atomic_exchange(ptr,&v,&ret,__ATOMIC_SEQ_CST);
+         
         return ret;
     }
 };
@@ -39,6 +39,7 @@ template <typename T>
 class Atomic {
     volatile T value;
 public:
+	Atomic() : value() {}
     Atomic(T x) : value(x) {}
     Atomic<T>& operator= (T v) {
         __atomic_store_n(&value,v,__ATOMIC_SEQ_CST);
@@ -56,7 +57,7 @@ public:
     void set(T inc) {
         return __atomic_store_n(&value,inc,__ATOMIC_SEQ_CST);
     }
-    T get(void) const{
+    T get (void) const {
         return __atomic_load_n(&value,__ATOMIC_SEQ_CST);
     }
     T exchange(T v) {
